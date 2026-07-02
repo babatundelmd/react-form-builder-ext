@@ -48,3 +48,8 @@ public/temp
 
 # bundles
 bundle.js
+package-lock.json
+yarn.lock
+.vscode
+.npmrc
+
