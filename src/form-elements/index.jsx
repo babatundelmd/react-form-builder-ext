@@ -1176,6 +1176,10 @@ class ArithmeticInput extends React.Component {
       field_name,
       pageBreakBefore,
       calculationFields,
+      limitControlOn,
+      outputLimitEnabled,
+      outputMaxValue,
+      outputFormat,
     } = data;
 
     const isDisabled = !!((read_only || itemReadOnly) && !allowEdit);
@@ -1191,10 +1195,15 @@ class ArithmeticInput extends React.Component {
 
           <ArithmeticComponentView
             // Prefer controlled API if supported: value={this.state.dataList}
+            fieldName={field_name}
             defaultValue={defaultValue || 0}
             mappedFields={calculationFields || []}
             resultData={resultData || []}
             isReadOnly={isDisabled}
+            limitControlOn={limitControlOn}
+            outputLimitEnabled={outputLimitEnabled}
+            outputMaxValue={outputMaxValue}
+            outputFormat={outputFormat}
             onChange={(next) => {
               const str = String(next ?? 0);
               this.setState({ dataList: str }, () => {

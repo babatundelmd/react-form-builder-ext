@@ -10,6 +10,7 @@ import CustomElement from "./form-elements/custom-element";
 import Registry from "./stores/registry";
 import ToggleFieldsContainer from "./ToggleFieldsContainer";
 import "./styles/final.css";
+import { logAuditActivity } from "./utils/auditLogger";
 
 
 const { Image, Checkboxes, Signature, Download, Camera, FileUpload } =
@@ -328,6 +329,62 @@ class ReactForm extends React.Component {
         errors.push(
           `${item.label} ${intl.formatMessage({ id: "message.is-required" })}!`
         );
+      }
+
+      if (item.element === "ArithmeticInput") {
+        if (item.limitControlOn) {
+          const itemErrors = [];
+          const calculationFields = item.calculationFields || [];
+          calculationFields.forEach((field) => {
+            if (field.limitEnabled) {
+              const answerVal = this.state.answers[field.field_name];
+              const val = parseFloat(String(answerVal || field.value || 0).replace(/,/g, "")) || 0;
+              
+              if (field.format === "non-negative" && val < 0) {
+                itemErrors.push(`${field.label} must be non-negative.`);
+              } else if (field.format === "percentage" && (val < 0 || val > 100)) {
+                itemErrors.push(`${field.label} must be a percentage (0-100).`);
+              }
+              
+              if (
+                field.maxValue !== undefined &&
+                field.maxValue !== "" &&
+                val > parseFloat(field.maxValue)
+              ) {
+                itemErrors.push(`${field.label} cannot exceed limit of ${field.maxValue}.`);
+              }
+            }
+          });
+
+          if (item.outputLimitEnabled) {
+            const answerVal = this.state.answers[item.field_name];
+            const val = parseFloat(String(answerVal || 0).replace(/,/g, "")) || 0;
+
+            if (item.outputFormat === "non-negative" && val < 0) {
+              itemErrors.push(`Calculation output must be non-negative.`);
+            } else if (item.outputFormat === "percentage" && (val < 0 || val > 100)) {
+              itemErrors.push(`Calculation output must be a percentage (0-100).`);
+            }
+
+            if (
+              item.outputMaxValue !== undefined &&
+              item.outputMaxValue !== "" &&
+              val > parseFloat(item.outputMaxValue)
+            ) {
+              itemErrors.push(`Calculation output cannot exceed limit of ${item.outputMaxValue}.`);
+            }
+          }
+
+          if (itemErrors.length > 0) {
+            errors.push(...itemErrors);
+            logAuditActivity("Breach Attempt", {
+              fieldName: item.field_name,
+              label: item.label,
+              errors: itemErrors,
+              answers: this.state.answers,
+            });
+          }
+        }
       }
 
       if (item.element === "EmailInput") {

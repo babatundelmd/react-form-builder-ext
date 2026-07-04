@@ -1040,6 +1040,22 @@ export default class FormElementsEdit extends React.Component {
                         newValues,
                       );
                     }}
+                    limitControlOn={this.props.element.limitControlOn}
+                    outputLimitEnabled={this.props.element.outputLimitEnabled}
+                    outputMaxValue={this.props.element.outputMaxValue}
+                    outputFormat={this.props.element.outputFormat}
+                    onChangeLimitControlOn={(val) => {
+                      this.editElementProp(this, "limitControlOn", val);
+                    }}
+                    onChangeOutputLimitEnabled={(val) => {
+                      this.editElementProp(this, "outputLimitEnabled", val);
+                    }}
+                    onChangeOutputMaxValue={(val) => {
+                      this.editElementProp(this, "outputMaxValue", val);
+                    }}
+                    onChangeOutputFormat={(val) => {
+                      this.editElementProp(this, "outputFormat", val);
+                    }}
                     isEditing
                   />
                 </div>
