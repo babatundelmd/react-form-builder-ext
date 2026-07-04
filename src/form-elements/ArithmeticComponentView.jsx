@@ -28,7 +28,6 @@ export default function ArithmeticComponentView({
     setCombinedFields(initialFields);
   }, [mappedFields, resultData, isReadOnly]);
 
-  // ✅ Perform calculation only when not read-only
   const calculatedResult = useMemo(() => {
     if (isReadOnly || !combinedFields.length) {
       // use previous stored value instead
@@ -54,18 +53,37 @@ export default function ArithmeticComponentView({
     }, 0);
   }, [combinedFields, isReadOnly, defaultValue]);
 
-  // ✅ Notify parent only in edit mode
+  // ✅ Calculate clamped result for outputting/displaying
+  const clampedResult = useMemo(() => {
+    let res = calculatedResult;
+    if (limitControlOn) {
+      if (outputLimitEnabled && outputMaxValue !== '') {
+        const maxVal = parseFloat(outputMaxValue);
+        if (res > maxVal) {
+          res = maxVal;
+        }
+      }
+      if (outputFormat === 'percentage' && res > 100) {
+        res = 100;
+      }
+      if (outputFormat === 'non-negative' && res < 0) {
+        res = 0;
+      }
+    }
+    return res;
+  }, [calculatedResult, limitControlOn, outputLimitEnabled, outputMaxValue, outputFormat]);
+
+  // ✅ Notify parent only in edit mode with clamped result
   useEffect(() => {
     if (!isReadOnly && typeof onChange === 'function') {
       const safeValue =
-        Number.isFinite(calculatedResult) && !Number.isNaN(calculatedResult)
-          ? calculatedResult.toLocaleString()
+        Number.isFinite(clampedResult) && !Number.isNaN(clampedResult)
+          ? clampedResult.toLocaleString()
           : '0';
       onChange(safeValue);
     }
-  }, [calculatedResult, isReadOnly]);
+  }, [clampedResult, isReadOnly]);
 
-  // ✅ Calculate validation errors for real-time display
   const errors = useMemo(() => {
     if (isReadOnly || !limitControlOn) return {};
     const currentErrors = {};
@@ -111,7 +129,6 @@ export default function ArithmeticComponentView({
     return currentErrors;
   }, [combinedFields, calculatedResult, isReadOnly, limitControlOn, outputLimitEnabled, outputMaxValue, outputFormat]);
 
-  // ✅ Sync errors with window.kusala_calculator_errors
   useEffect(() => {
     if (!isReadOnly && fieldName) {
       if (!window.kusala_calculator_errors) {
@@ -130,10 +147,9 @@ export default function ArithmeticComponentView({
     };
   }, [errors, isReadOnly, fieldName]);
 
-  // ✅ Display value based on mode
   const displayValue =
-    Number.isFinite(calculatedResult) && !Number.isNaN(calculatedResult)
-      ? calculatedResult.toLocaleString()
+    Number.isFinite(clampedResult) && !Number.isNaN(clampedResult)
+      ? clampedResult.toLocaleString()
       : '0';
 
   return (

@@ -334,45 +334,11 @@ class ReactForm extends React.Component {
       if (item.element === "ArithmeticInput") {
         if (item.limitControlOn) {
           const itemErrors = [];
-          const calculationFields = item.calculationFields || [];
-          calculationFields.forEach((field) => {
-            if (field.limitEnabled) {
-              const answerVal = this.state.answers[field.field_name];
-              const val = parseFloat(String(answerVal || field.value || 0).replace(/,/g, "")) || 0;
-              
-              if (field.format === "non-negative" && val < 0) {
-                itemErrors.push(`${field.label} must be non-negative.`);
-              } else if (field.format === "percentage" && (val < 0 || val > 100)) {
-                itemErrors.push(`${field.label} must be a percentage (0-100).`);
-              }
-              
-              if (
-                field.maxValue !== undefined &&
-                field.maxValue !== "" &&
-                val > parseFloat(field.maxValue)
-              ) {
-                itemErrors.push(`${field.label} cannot exceed limit of ${field.maxValue}.`);
-              }
-            }
-          });
-
-          if (item.outputLimitEnabled) {
-            const answerVal = this.state.answers[item.field_name];
-            const val = parseFloat(String(answerVal || 0).replace(/,/g, "")) || 0;
-
-            if (item.outputFormat === "non-negative" && val < 0) {
-              itemErrors.push(`Calculation output must be non-negative.`);
-            } else if (item.outputFormat === "percentage" && (val < 0 || val > 100)) {
-              itemErrors.push(`Calculation output must be a percentage (0-100).`);
-            }
-
-            if (
-              item.outputMaxValue !== undefined &&
-              item.outputMaxValue !== "" &&
-              val > parseFloat(item.outputMaxValue)
-            ) {
-              itemErrors.push(`Calculation output cannot exceed limit of ${item.outputMaxValue}.`);
-            }
+          const globalErrorsObj = window.kusala_calculator_errors?.[item.field_name];
+          if (globalErrorsObj) {
+            Object.values(globalErrorsObj).forEach((err) => {
+              itemErrors.push(err);
+            });
           }
 
           if (itemErrors.length > 0) {
