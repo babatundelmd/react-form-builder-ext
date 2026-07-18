@@ -1334,7 +1334,7 @@ export default class FormElementsEdit extends React.Component {
               <select
                 id="dateFormat"
                 className="form-control"
-                value={this.props.element.documentId}
+                value={this.props.element.dateFormat}
                 onBlur={this.updateElement.bind(this)}
                 onChange={this.editElementProp.bind(
                   this,
