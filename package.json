@@ -1,6 +1,6 @@
 {
   "name": "@babatundelmd/react-form-builder-ext",
-  "version": "2.3.34",
+  "version": "2.3.35",
   "description": "A complete form builder for react.",
   "main": "lib/index.js",
   "types": "types/index.d.ts",
