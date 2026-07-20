@@ -336,7 +336,10 @@ class ReactForm extends React.Component {
           const itemErrors = [];
           const globalErrorsObj = window.kusala_calculator_errors?.[item.field_name];
           if (globalErrorsObj) {
-            Object.values(globalErrorsObj).forEach((err) => {
+            Object.entries(globalErrorsObj).forEach(([key, err]) => {
+              // Output limit breaches are clamped to the max value, so they
+              // should not block submission.
+              if (key === "output_field_limit") return;
               itemErrors.push(err);
             });
           }
