@@ -2351,7 +2351,13 @@ class FileUpload extends React.Component {
   uploadFile = async (file) => {
     try {
       const token = window?.localStorage.getItem("token") || "";
-      if (!token) return;
+      if (!token) {
+        this.setState({
+          fileStatus: "error",
+          error: "You must be logged in to upload files",
+        });
+        return null;
+      }
       const config = {
         headers: { Authorization: `Bearer ${token}` },
       };
@@ -2371,7 +2377,7 @@ class FileUpload extends React.Component {
       const data = {
         fileName: file.name,
         base64: base64File,
-        ext: `.${getExtensionFromMimeType(file.type)}`,
+        ext: `.${getExtensionFromMimeType(file.type) || file.name.split(".").pop()}`,
       };
 
       const response = await axios.post(
@@ -2697,7 +2703,10 @@ class MultiFileUpload extends React.Component {
       };
 
       const token = window.localStorage.getItem("token");
-      if (!token) return;
+      if (!token) {
+        this.setState({ error: "You must be logged in to upload files" });
+        return null;
+      }
       const config = {
         headers: {
           Authorization: `Bearer ${token}`,
