@@ -1981,7 +1981,7 @@ class RadioButton extends React.Component {
                 className={`custom-control custom-radio${
                   data.inline ? " option-inline" : ""
                 }`}
-                key={option.key}
+                key={id}
               >
                 <input
                   type="radio"
