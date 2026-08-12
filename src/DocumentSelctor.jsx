@@ -1,20 +1,16 @@
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
+import { authHeader } from './utils/auth';
 
 export default function DocumentSelctor({ handleValue }) {
   const [documents, setDocuments] = useState([]);
   const [selected, setSelected] = useState(null);
-  const token = window.localStorage.getItem('token');
-
-  const config = {
-    headers: { Authorization: `Bearer ${token}` },
-  };
 
   const getDocuments = async () => {
     try {
       const response = await axios.get(
         'https://api.dev.gateway.kusala.com.ng/workflows/api/v1/FileUpload/upload-document',
-        config,
+        { headers: { Authorization: authHeader() } },
       );
       if (response.status === 200) {
         setDocuments({

@@ -12,6 +12,7 @@ import FormGenerator from './form';
 import store from './stores/store';
 import Registry from './stores/registry';
 import AppLocale from './language-provider';
+import { setAuthTokenProvider } from './utils/auth';
 import './styles/final.css';
 
 
@@ -115,9 +116,11 @@ FormBuilders.ReactFormBuilder = ReactFormBuilder;
 FormBuilders.ReactFormGenerator = ReactFormGenerator;
 FormBuilders.ElementStore = store;
 FormBuilders.Registry = Registry;
+FormBuilders.setAuthTokenProvider = setAuthTokenProvider;
 
 export default FormBuilders;
 
 export {
   ReactFormBuilder, ReactFormGenerator, store as ElementStore, Registry,
+  setAuthTokenProvider,
 };

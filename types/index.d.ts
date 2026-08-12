@@ -166,3 +166,14 @@ export type ActionType = "load" | "updateOrder" | "delete";
 export class ElementStore {
   static dispatch: (type: ActionType, data: any) => void;
 }
+
+/**
+ * Register a getter for the bearer token the builder should send with its API calls
+ * (uploads, document lookups, API-populated options). Call it once at app startup.
+ *
+ * Required: with no provider registered the builder sends no credentials and those calls
+ * fail. It does not read localStorage — a bearer token does not belong there.
+ */
+export function setAuthTokenProvider(
+  provider: (() => string | null | undefined) | null
+): void;
