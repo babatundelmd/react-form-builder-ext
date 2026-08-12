@@ -17,6 +17,7 @@ import myxss from "./myxss";
 import ErrorMessage from "../error-message";
 import SuccessMessage from "../success-message";
 import { getExtensionFromMimeType } from "../utils/getExt";
+import { getAuthToken } from "../utils/auth";
 import ImageViewer from "../ImageViewer";
 import TableInputElement from "../TableInputElement";
 import UniversalFileViewer from "../DocumentViewer";
@@ -329,7 +330,7 @@ class DynamicInput extends React.Component {
       return;
     }
 
-    const token = window.localStorage.getItem("token");
+    const token = getAuthToken();
     // if (!token) return;
 
     this.setState({
@@ -567,7 +568,7 @@ class DocumentSelect extends React.Component {
 
   async checkDocument(id) {
     try {
-      const token = window.localStorage.getItem("token");
+      const token = getAuthToken();
       if (!token) return;
       const tempUser = JSON.parse(
         window.localStorage.getItem("LoginInfo") || "{}",
@@ -612,7 +613,7 @@ class DocumentSelect extends React.Component {
   // eslint-disable-next-line consistent-return
   async getSignatures(id) {
     try {
-      const token = window.localStorage.getItem("token");
+      const token = getAuthToken();
       if (!token) return;
       const config = {
         headers: { Authorization: `Bearer ${token}` },
@@ -2350,7 +2351,7 @@ class FileUpload extends React.Component {
 
   uploadFile = async (file) => {
     try {
-      const token = window?.localStorage.getItem("token") || "";
+      const token = getAuthToken();
       if (!token) {
         this.setState({
           fileStatus: "error",
@@ -2702,7 +2703,7 @@ class MultiFileUpload extends React.Component {
         ext: `.${file.name.split(".").pop()}`,
       };
 
-      const token = window.localStorage.getItem("token");
+      const token = getAuthToken();
       if (!token) {
         this.setState({ error: "You must be logged in to upload files" });
         return null;

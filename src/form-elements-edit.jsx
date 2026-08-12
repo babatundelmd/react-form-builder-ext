@@ -13,6 +13,7 @@ import axios from "axios";
 import ReactDatePicker from "react-datepicker";
 import DynamicOptionList from "./dynamic-option-list";
 import { get } from "./stores/requests";
+import { getAuthToken } from "./utils/auth";
 import { FileTypes } from "./data";
 import ID from "./UUID";
 import IntlMessages from "./language-provider/IntlMessages";
@@ -71,7 +72,7 @@ export default class FormElementsEdit extends React.Component {
 
   getDocuments = async () => {
     try {
-      const token = window.localStorage.getItem("token");
+      const token = getAuthToken();
       const localData = window.localStorage.getItem("userData");
       const userData = localData ? JSON.parse(localData) : null;
       const LoginInfo = window.localStorage.getItem("LoginInfo");

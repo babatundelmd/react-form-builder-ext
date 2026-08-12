@@ -19,8 +19,7 @@ import classNames from 'classnames';
 import { toast, ToastContainer } from 'react-toastify';
 
 import { FileTypes } from '../data';
-
-const token = window?.localStorage.getItem("token") || "";
+import { authHeader } from '../utils/auth';
 
 const isImage = (url) => {
   if (!url) return false;
@@ -61,7 +60,12 @@ const AzureFileUploadComponent = forwardRef(
 
     const api = axios.create({
       baseURL: `${apiUrl}/workflows/api/v1`,
-      headers: { Authorization: `Bearer ${token}` },
+    });
+    // Resolved per request rather than baked into the instance — uploads often happen long
+    // after mount, by which point the token may have rotated.
+    api.interceptors.request.use((config) => {
+      config.headers.Authorization = authHeader();
+      return config;
     });
 
     /** ✅ Handles file upload to Azure */

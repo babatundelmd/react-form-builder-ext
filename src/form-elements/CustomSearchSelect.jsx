@@ -9,6 +9,7 @@ import {
   ComboboxButton,
 } from '@headlessui/react';
 import { ChevronDown } from 'lucide-react';
+import { authHeader } from '../utils/auth';
 
 const CustomSelect = forwardRef(
   (
@@ -69,7 +70,7 @@ const CustomSelect = forwardRef(
       try {
         const response = await axios.get(url, {
           headers: {
-            Authorization: `Bearer ${window.localStorage.getItem('token')}`,
+            Authorization: authHeader(),
           },
           params: { q: debouncedQuery },
         });

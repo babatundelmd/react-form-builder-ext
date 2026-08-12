@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-
-const token = window?.localStorage.getItem('token') || '';
+import { authHeader } from '../utils/auth';
 
 export default function AzureFileSettings({
   detail = {},
@@ -9,7 +8,12 @@ export default function AzureFileSettings({
 }) {
 const api = axios.create({
     baseURL: `${apiUrl}/workflows/api/v1`,
-    headers: { Authorization: `Bearer ${token}` },
+  });
+  // Resolved per request rather than baked into the instance, so a token issued or
+  // rotated after this component mounted is still the one that gets sent.
+  api.interceptors.request.use((config) => {
+    config.headers.Authorization = authHeader();
+    return config;
   });
 
   const [loading, setLoading] = useState(false);
