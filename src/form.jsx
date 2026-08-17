@@ -129,6 +129,7 @@ class ReactForm extends React.Component {
       case "CascadeSelect":
       case "CustomDatePicker":
       case "ArithmeticInput":
+      case "DynamicPosting":
       case "CustomSelect":
         $.value = ref?.state?.dataList ?? "";
         return $;
@@ -549,6 +550,7 @@ class ReactForm extends React.Component {
           case "DynamicInput":
           case "AmountInput":
           case "ArithmeticInput":
+          case "DynamicPosting":
           case "DocumentSelect":
           case "CascadeSelect":
           case "DynamicMultiInput":

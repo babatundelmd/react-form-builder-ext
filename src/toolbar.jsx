@@ -323,6 +323,18 @@ class Toolbar extends React.Component {
         canToggleField: true,
       },
       {
+        key: 'DynamicPosting',
+        canHaveAnswer: true,
+        name: 'Dynamic Posting',
+        label: 'Dynamic Posting',
+        icon: 'fas fa-exchange-alt',
+        field_name: 'dynamic_posting_',
+        havePostingConfig: true,
+        narrationTypes: 'VAT, WHT, Reversed Amount',
+        canReadOnly: true,
+        canToggleField: true,
+      },
+      {
         key: 'PasswordInput',
         canHaveAnswer: true,
         name: 'Password Input',
@@ -656,6 +668,17 @@ class Toolbar extends React.Component {
     }
     if (item.haveArithmetic) {
       elementOptions.haveArithmetic = item.haveArithmetic;
+    }
+    if (item.havePostingConfig) {
+      elementOptions.havePostingConfig = item.havePostingConfig;
+      elementOptions.customerAccountField = item.customerAccountField;
+      elementOptions.otherAccountField = item.otherAccountField;
+      elementOptions.defaultAmortizeGL = item.defaultAmortizeGL;
+      elementOptions.branchCode = item.branchCode;
+      elementOptions.currency = item.currency;
+      elementOptions.appendBranchCodeCheck = item.appendBranchCodeCheck;
+      elementOptions.transactionCategory = item.transactionCategory;
+      elementOptions.narrationTypes = item.narrationTypes;
     }
     if (item.canReadOnly) {
       elementOptions.readOnly = false;

@@ -26,6 +26,7 @@ import DataGrid from "./DataGrid";
 import CustomSelectComponent from "./CustomSearchSelect";
 import CascadeDropdown from "./cascade-dropdown";
 import ArithmeticComponentView from "./ArithmeticComponentView";
+import DynamicPostingComponent from "./dynamic-posting";
 import Base64FileViewer from "./base64-render";
 import AzureFileUploadComponent from "./azure-file-upload";
 import { FileTypes } from "../data";
@@ -1225,6 +1226,77 @@ class ArithmeticInput extends React.Component {
             // This input mirrors ArithmeticComponentView; user typing is ignored on purpose.
             onChange={() => {}}
           /> */}
+        </div>
+      </div>
+    );
+  }
+}
+
+class DynamicPosting extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      dataList:
+        props.defaultValue && typeof props.defaultValue === "object"
+          ? props.defaultValue
+          : null,
+    };
+  }
+
+  render() {
+    const {
+      data = {},
+      style,
+      read_only,
+      resultData,
+      handleChange,
+      defaultValue,
+    } = this.props;
+
+    const {
+      allowEdit,
+      isReadOnly: itemReadOnly,
+      field_name,
+      pageBreakBefore,
+      customerAccountField,
+      otherAccountField,
+      defaultAmortizeGL,
+      branchCode,
+      currency,
+      appendBranchCodeCheck,
+      transactionCategory,
+      narrationTypes,
+    } = data;
+
+    const isDisabled = !!((read_only || itemReadOnly) && !allowEdit);
+    const baseClasses = pageBreakBefore
+      ? "SortableItem rfb-item alwaysbreak"
+      : "SortableItem rfb-item";
+
+    return (
+      <div style={style} className={baseClasses}>
+        <ComponentHeader {...this.props} />
+        <div className="form-group">
+          <ComponentLabel {...this.props} />
+          <DynamicPostingComponent
+            fieldName={field_name}
+            defaultValue={defaultValue}
+            resultData={resultData || {}}
+            isReadOnly={isDisabled}
+            customerAccountField={customerAccountField}
+            otherAccountField={otherAccountField}
+            defaultAmortizeGL={defaultAmortizeGL}
+            branchCode={branchCode}
+            currency={currency}
+            appendBranchCodeCheck={appendBranchCodeCheck}
+            transactionCategory={transactionCategory}
+            narrationTypes={narrationTypes}
+            onChange={(payload) => {
+              this.setState({ dataList: payload }, () => {
+                handleChange?.(payload);
+              });
+            }}
+          />
         </div>
       </div>
     );
@@ -3185,6 +3257,7 @@ FormElements.TextInput = TextInput;
 FormElements.DynamicInput = DynamicInput;
 FormElements.AmountInput = AmountInput;
 FormElements.ArithmeticInput = ArithmeticInput;
+FormElements.DynamicPosting = DynamicPosting;
 FormElements.DocumentSelect = DocumentSelect;
 FormElements.TableInput = TableInput;
 FormElements.CascadeSelect = CascadeSelect;

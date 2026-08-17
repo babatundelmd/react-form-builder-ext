@@ -1064,6 +1064,158 @@ export default class FormElementsEdit extends React.Component {
             </div>
           </div>
         )}
+        {this.props.element.hasOwnProperty("havePostingConfig") && (
+          <div className="mb-2">
+            <div className="form-group">
+              <label className="control-label text-13" htmlFor="postingCustomerAccountField">
+                Customer Account Field
+              </label>
+              <select
+                id="postingCustomerAccountField"
+                className="form-control"
+                defaultValue={this.props.element.customerAccountField || ""}
+                onBlur={this.updateElement.bind(this)}
+                onChange={this.editElementProp.bind(
+                  this,
+                  "customerAccountField",
+                  "value",
+                )}
+              >
+                <option value="">Select field</option>
+                {this.state.multiFieldOptions
+                  .filter((f) => f.field_name)
+                  .map((f) => (
+                    <option key={f.field_name} value={f.field_name}>
+                      {(f.label || "").replace(/<[^>]*>/g, "") || f.field_name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="control-label text-13" htmlFor="postingOtherAccountField">
+                Other Account Field
+              </label>
+              <select
+                id="postingOtherAccountField"
+                className="form-control"
+                defaultValue={this.props.element.otherAccountField || ""}
+                onBlur={this.updateElement.bind(this)}
+                onChange={this.editElementProp.bind(
+                  this,
+                  "otherAccountField",
+                  "value",
+                )}
+              >
+                <option value="">Select field</option>
+                {this.state.multiFieldOptions
+                  .filter((f) => f.field_name)
+                  .map((f) => (
+                    <option key={f.field_name} value={f.field_name}>
+                      {(f.label || "").replace(/<[^>]*>/g, "") || f.field_name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="control-label text-13" htmlFor="postingDefaultAmortizeGL">
+                Default Amortize GL Account
+              </label>
+              <input
+                id="postingDefaultAmortizeGL"
+                type="text"
+                className="form-control"
+                defaultValue={this.props.element.defaultAmortizeGL || ""}
+                onBlur={this.updateElement.bind(this)}
+                onChange={this.editElementProp.bind(
+                  this,
+                  "defaultAmortizeGL",
+                  "value",
+                )}
+              />
+            </div>
+            <div className="form-group">
+              <label className="control-label text-13" htmlFor="postingNarrationTypes">
+                Narration Types (comma separated)
+              </label>
+              <input
+                id="postingNarrationTypes"
+                type="text"
+                className="form-control"
+                defaultValue={
+                  this.props.element.narrationTypes || "VAT, WHT, Reversed Amount"
+                }
+                onBlur={this.updateElement.bind(this)}
+                onChange={this.editElementProp.bind(
+                  this,
+                  "narrationTypes",
+                  "value",
+                )}
+              />
+            </div>
+            <div className="form-group">
+              <label className="control-label text-13" htmlFor="postingBranchCode">
+                Branch Code
+              </label>
+              <input
+                id="postingBranchCode"
+                type="text"
+                className="form-control"
+                defaultValue={this.props.element.branchCode || ""}
+                onBlur={this.updateElement.bind(this)}
+                onChange={this.editElementProp.bind(this, "branchCode", "value")}
+              />
+            </div>
+            <div className="form-group">
+              <label className="control-label text-13" htmlFor="postingCurrency">
+                Currency
+              </label>
+              <input
+                id="postingCurrency"
+                type="text"
+                className="form-control"
+                defaultValue={this.props.element.currency || ""}
+                onBlur={this.updateElement.bind(this)}
+                onChange={this.editElementProp.bind(this, "currency", "value")}
+              />
+            </div>
+            <div className="form-group">
+              <label className="control-label text-13" htmlFor="postingTransactionCategory">
+                Transaction Category
+              </label>
+              <input
+                id="postingTransactionCategory"
+                type="text"
+                className="form-control"
+                defaultValue={this.props.element.transactionCategory || ""}
+                onBlur={this.updateElement.bind(this)}
+                onChange={this.editElementProp.bind(
+                  this,
+                  "transactionCategory",
+                  "value",
+                )}
+              />
+            </div>
+            <div className="mt-2 mb-3 custom-control custom-checkbox">
+              <input
+                id="posting-append-branch-code"
+                className="custom-control-input"
+                type="checkbox"
+                checked={!!this.props.element.appendBranchCodeCheck}
+                onChange={this.editElementProp.bind(
+                  this,
+                  "appendBranchCodeCheck",
+                  "checked",
+                )}
+              />
+              <label
+                className="custom-control-label"
+                htmlFor="posting-append-branch-code"
+              >
+                Append Branch Code Check
+              </label>
+            </div>
+          </div>
+        )}
         {this.props.element.hasOwnProperty("canToggleField") && (
           <div className="">
             <div className="mt-2 mb-3 custom-control custom-checkbox">

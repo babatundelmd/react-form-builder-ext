@@ -14,6 +14,7 @@ const {
   DynamicInput,
   AmountInput,
   ArithmeticInput,
+  DynamicPosting,
   DocumentSelect,
   DynamicMultiInput,
   DataGridInput,
@@ -56,6 +57,7 @@ FormElements.TextInput = SortableElement(TextInput);
 FormElements.DynamicInput = SortableElement(DynamicInput);
 FormElements.AmountInput = SortableElement(AmountInput);
 FormElements.ArithmeticInput = SortableElement(ArithmeticInput);
+FormElements.DynamicPosting = SortableElement(DynamicPosting);
 FormElements.DocumentSelect = SortableElement(DocumentSelect);
 FormElements.CascadeSelect = SortableElement(CascadeSelect);
 FormElements.DynamicMultiInput = SortableElement(DynamicMultiInput);
