@@ -229,6 +229,16 @@ class ReactForm extends React.Component {
       custom_name: item.custom_name || item.field_name,
     };
 
+    // Per-value child of a Dynamic Posting element: it has no input of its
+    // own, its value is one key of the parent's resolved payload.
+    if (item.postingKey) {
+      const parentRef = this.inputs[item.postingParentField];
+      const payload = parentRef?.state?.dataList;
+      const value = payload?.[item.postingKey];
+      itemData.value = value === undefined || value === null ? "" : value;
+      return itemData;
+    }
+
     if (item.element === "Checkboxes" || item.element === "RadioButtons") {
       const checked = [];
       for (const option of item.options || []) {

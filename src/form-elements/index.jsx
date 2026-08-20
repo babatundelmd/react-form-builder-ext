@@ -1278,6 +1278,7 @@ class DynamicPosting extends React.Component {
             resultData={resultData || {}}
             formData={formData || []}
             isReadOnly={isDisabled}
+            isDesignMode={!this.props.mutable}
             defaultAmortizeGL={defaultAmortizeGL}
             onChange={(payload) => {
               this.setState({ dataList: payload }, () => {

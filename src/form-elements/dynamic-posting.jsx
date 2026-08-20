@@ -1,22 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
+import { POSTING_FIELD_KEYS } from '../utils/posting-fields';
 
-/**
- * SmartAdapter payload field names. These MUST match the mapping targets in
- * the workflow editor exactly so each value is individually selectable there.
- */
-export const POSTING_FIELD_KEYS = [
-  'CreditField',
-  'CreditNarration',
-  'DebitField',
-  'DebitNarration',
-  'AmountField',
-  'Currency',
-  'BranchCode',
-  'AppendBranchCodeforTransaction',
-  'NarrationField',
-  'TransactionCategoryField',
-];
+export { POSTING_FIELD_KEYS };
 
 /**
  * Labels the component binds to on the parent form. First matching candidate
@@ -94,6 +80,26 @@ export function resolveFormValues(formData = [], resultData = {}) {
 }
 
 /**
+ * Design-time counterpart of resolveFormValues: reports which form field each
+ * posting slot will bind to, so the builder can flag labels that don't exist
+ * on the form yet.
+ */
+export function resolveFormBindings(formData = []) {
+  const labels = new Set();
+  (Array.isArray(formData) ? formData : []).forEach((item) => {
+    if (!item?.field_name || item?.postingKey) return;
+    const key = normalizeLabel(item.label);
+    if (key) labels.add(key);
+  });
+
+  const bindings = {};
+  Object.entries(FORM_LABEL_BINDINGS).forEach(([target, candidates]) => {
+    bindings[target] = candidates.find((label) => labels.has(label)) || null;
+  });
+  return bindings;
+}
+
+/**
  * Resolves the posting rules into the SmartAdapter payload. Pure function so
  * the matrix (entry type x amortize) is unit-testable. Amortize is applied
  * first (replacing the PL code with the configured GL), then the entry type
@@ -133,7 +139,10 @@ export function buildPostingPayload({
     AmountField: numericAmount,
     Currency: String(currency ?? '').trim(),
     BranchCode: String(branchCode ?? '').trim(),
-    AppendBranchCodeforTransaction: toBool(appendBranchCode),
+    AppendBranchCodeforTransaction:
+      appendBranchCode === undefined || String(appendBranchCode).trim() === ''
+        ? ''
+        : toBool(appendBranchCode),
     NarrationField: narrationText,
     TransactionCategoryField: String(transactionCategory ?? '').trim(),
     // Kept for round-tripping and server-side validation of the mapping.
@@ -150,6 +159,7 @@ export default function DynamicPostingComponent({
   resultData = {},
   formData = [],
   defaultAmortizeGL = '',
+  isDesignMode = false,
 }) {
   const saved =
     defaultValue && typeof defaultValue === 'object' ? defaultValue : {};
@@ -160,6 +170,8 @@ export default function DynamicPostingComponent({
     () => resolveFormValues(formData, resultData),
     [formData, resultData],
   );
+
+  const bindings = useMemo(() => resolveFormBindings(formData), [formData]);
 
   const payload = useMemo(
     () =>
@@ -204,7 +216,6 @@ export default function DynamicPostingComponent({
   const amortizeGLMissing =
     amortize && !String(defaultAmortizeGL || '').trim();
   const missing = Object.keys(FORM_LABEL_BINDINGS).filter((key) => {
-    if (key === 'appendBranchCode') return false; // defaults to false
     if (key === 'plCode' && amortize) return false; // replaced by the GL
     const value = resolved[key];
     return value === undefined || String(value ?? '').trim() === '';
@@ -218,10 +229,8 @@ export default function DynamicPostingComponent({
             key === 'plCode' && amortize
               ? defaultAmortizeGL
               : resolved[key];
-          const display =
-            key === 'appendBranchCode'
-              ? String(toBool(raw))
-              : String(raw ?? '').trim();
+          const display = String(raw ?? '').trim();
+          const bound = bindings[key];
           return (
             <div
               key={key}
@@ -231,9 +240,19 @@ export default function DynamicPostingComponent({
                 {DISPLAY_LABELS[key]}
                 {key === 'plCode' && amortize ? ' (Amortize GL)' : ''}
               </span>
-              <span className="font-medium text-gray-900">
-                {display || '—'}
-              </span>
+              {isDesignMode ? (
+                <span
+                  className={
+                    bound ? 'font-medium text-gray-500' : 'font-medium text-red-600'
+                  }
+                >
+                  {bound ? `from "${bound}"` : 'no matching form field'}
+                </span>
+              ) : (
+                <span className="font-medium text-gray-900">
+                  {display || '—'}
+                </span>
+              )}
             </div>
           );
         })}
@@ -265,7 +284,11 @@ export default function DynamicPostingComponent({
         </div>
       )}
 
-      {payload ? (
+      {isDesignMode ? (
+        <p className="text-xs text-gray-500">
+          Values are read from the form fields above when the form is filled.
+        </p>
+      ) : payload ? (
         <div className="p-3 rounded-xl border border-green-200 bg-green-50/30 text-xs text-gray-700">
           <span className="font-semibold">Debit:</span> {payload.DebitField}
           <span className="font-semibold ml-3">Credit:</span>{' '}

@@ -1,5 +1,6 @@
 import Store from 'beedle';
 import { get, post } from './requests';
+import { syncPostingFields } from '../utils/posting-fields';
 
 let _saveUrl;
 let _onPost;
@@ -8,8 +9,11 @@ let _onLoad;
 const store = new Store({
   actions: {
     setData(context, data, saveData) {
-      context.commit('setData', data);
-      if (saveData) this.save(data);
+      // Keep each Dynamic Posting element's per-value child fields in step so
+      // the workflow can map them individually.
+      const normalized = syncPostingFields(data);
+      context.commit('setData', normalized);
+      if (saveData) this.save(normalized);
     },
 
     load(context, { loadUrl, saveUrl, data, saveAlways }) {
