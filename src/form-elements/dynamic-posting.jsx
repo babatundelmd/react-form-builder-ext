@@ -1,49 +1,143 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 
-export const DEFAULT_NARRATION_TYPES = 'VAT, WHT, Reversed Amount';
-
-const parseNarrationTypes = (raw) =>
-  String(raw || DEFAULT_NARRATION_TYPES)
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-const toNumber = (value) => parseFloat(String(value ?? '').replace(/,/g, '')) || 0;
+/**
+ * SmartAdapter payload field names. These MUST match the mapping targets in
+ * the workflow editor exactly so each value is individually selectable there.
+ */
+export const POSTING_FIELD_KEYS = [
+  'CreditField',
+  'CreditNarration',
+  'DebitField',
+  'DebitNarration',
+  'AmountField',
+  'Currency',
+  'BranchCode',
+  'AppendBranchCodeforTransaction',
+  'NarrationField',
+  'TransactionCategoryField',
+];
 
 /**
- * Resolves the posting rules for the Dynamic Posting Component.
- * Pure function so the mapping matrix (entry type x amortize x narration)
- * can be unit-tested in isolation.
+ * Labels the component binds to on the parent form. First matching candidate
+ * wins, so renames like "Account Number" -> "Customer Account" keep working.
+ */
+export const FORM_LABEL_BINDINGS = {
+  customerAccount: ['customer account', 'account number'],
+  plCode: ['pl code'],
+  narration: ['narration'],
+  transactionCategory: ['transaction category'],
+  branchCode: ['branch code'],
+  appendBranchCode: ['append branch code'],
+  amount: ['amount'],
+  currency: ['currency type', 'currency'],
+  entryType: ['entry type'],
+};
+
+const DISPLAY_LABELS = {
+  customerAccount: 'Customer Account',
+  plCode: 'PL Code',
+  narration: 'Narration',
+  transactionCategory: 'Transaction Category',
+  branchCode: 'Branch Code',
+  appendBranchCode: 'Append Branch Code',
+  amount: 'Amount',
+  currency: 'Currency Type',
+  entryType: 'Entry Type',
+};
+
+const normalizeLabel = (label) =>
+  String(label || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[:*\s]+$/, '')
+    .toLowerCase();
+
+const toNumber = (value) =>
+  parseFloat(String(value ?? '').replace(/,/g, '')) || 0;
+
+const toBool = (value) => {
+  if (typeof value === 'boolean') return value;
+  return String(value ?? '').trim().toLowerCase() === 'true';
+};
+
+const normalizeEntryType = (value) => {
+  const v = String(value ?? '').toLowerCase();
+  if (v.includes('credit')) return 'credit';
+  if (v.includes('debit')) return 'debit';
+  return '';
+};
+
+/**
+ * Matches parent-form fields to posting inputs by label and reads their
+ * current answers. formData is the form definition; resultData the live
+ * answers keyed by field_name.
+ */
+export function resolveFormValues(formData = [], resultData = {}) {
+  const byLabel = {};
+  (Array.isArray(formData) ? formData : []).forEach((item) => {
+    if (!item?.field_name) return;
+    const key = normalizeLabel(item.label);
+    if (key && byLabel[key] === undefined) {
+      byLabel[key] = resultData?.[item.field_name];
+    }
+  });
+
+  const resolved = {};
+  Object.entries(FORM_LABEL_BINDINGS).forEach(([target, candidates]) => {
+    const match = candidates.find((label) => byLabel[label] !== undefined);
+    resolved[target] = match !== undefined ? byLabel[match] : undefined;
+  });
+  return resolved;
+}
+
+/**
+ * Resolves the posting rules into the SmartAdapter payload. Pure function so
+ * the matrix (entry type x amortize) is unit-testable. Amortize is applied
+ * first (replacing the PL code with the configured GL), then the entry type
+ * decides which account is credited and which is debited:
+ *   credit -> Customer Account is the CreditField, PL Code the DebitField
+ *   debit  -> PL Code is the CreditField, Customer Account the DebitField
  */
 export function buildPostingPayload({
   customerAccount,
-  otherAccount,
+  plCode,
   entryType,
   narration,
   amount,
   branchCode,
   currency,
-  appendBranchCodeCheck,
+  appendBranchCode,
   transactionCategory,
   amortize,
+  defaultAmortizeGL,
 }) {
+  const account = String(customerAccount ?? '').trim();
+  const effectivePlCode = amortize
+    ? String(defaultAmortizeGL ?? '').trim()
+    : String(plCode ?? '').trim();
+  const entry = normalizeEntryType(entryType);
   const numericAmount = toNumber(amount);
-  if (!entryType || !narration || numericAmount <= 0) return null;
-  if (!customerAccount || !otherAccount) return null;
+  const narrationText = String(narration ?? '').trim();
 
-  const isDebit = entryType === 'debit';
+  if (!entry || !account || !effectivePlCode || numericAmount <= 0) return null;
+
+  const isCredit = entry === 'credit';
   return {
-    debitAccount: isDebit ? customerAccount : otherAccount,
-    creditAccount: isDebit ? otherAccount : customerAccount,
-    amount: numericAmount,
-    narration,
-    branchCode: branchCode || '',
-    currency: currency || '',
-    appendBranchCodeCheck: !!appendBranchCodeCheck,
-    transactionCategory: transactionCategory || '',
+    CreditField: isCredit ? account : effectivePlCode,
+    CreditNarration: narrationText,
+    DebitField: isCredit ? effectivePlCode : account,
+    DebitNarration: narrationText,
+    AmountField: numericAmount,
+    Currency: String(currency ?? '').trim(),
+    BranchCode: String(branchCode ?? '').trim(),
+    AppendBranchCodeforTransaction: toBool(appendBranchCode),
+    NarrationField: narrationText,
+    TransactionCategoryField: String(transactionCategory ?? '').trim(),
     // Kept for round-tripping and server-side validation of the mapping.
-    entryType,
+    entryType: entry,
     amortize: !!amortize,
   };
 }
@@ -54,66 +148,27 @@ export default function DynamicPostingComponent({
   onChange,
   isReadOnly = false,
   resultData = {},
-  customerAccountField = '',
-  otherAccountField = '',
+  formData = [],
   defaultAmortizeGL = '',
-  branchCode = '',
-  currency = '',
-  appendBranchCodeCheck = false,
-  transactionCategory = '',
-  narrationTypes = DEFAULT_NARRATION_TYPES,
 }) {
   const saved =
     defaultValue && typeof defaultValue === 'object' ? defaultValue : {};
 
-  const [narration, setNarration] = useState(saved.narration || '');
-  const [entryType, setEntryType] = useState(saved.entryType || '');
-  const [amount, setAmount] = useState(
-    saved.amount != null ? String(saved.amount) : '',
-  );
   const [amortize, setAmortize] = useState(!!saved.amortize);
 
-  const narrationOptions = useMemo(
-    () => parseNarrationTypes(narrationTypes),
-    [narrationTypes],
+  const resolved = useMemo(
+    () => resolveFormValues(formData, resultData),
+    [formData, resultData],
   );
-
-  const customerAccount = String(
-    resultData?.[customerAccountField] ?? '',
-  ).trim();
-  const parentOtherAccount = String(
-    resultData?.[otherAccountField] ?? '',
-  ).trim();
-  const otherAccount = amortize
-    ? String(defaultAmortizeGL || '').trim()
-    : parentOtherAccount;
 
   const payload = useMemo(
     () =>
       buildPostingPayload({
-        customerAccount,
-        otherAccount,
-        entryType,
-        narration,
-        amount,
-        branchCode,
-        currency,
-        appendBranchCodeCheck,
-        transactionCategory,
+        ...resolved,
         amortize,
+        defaultAmortizeGL,
       }),
-    [
-      customerAccount,
-      otherAccount,
-      entryType,
-      narration,
-      amount,
-      branchCode,
-      currency,
-      appendBranchCodeCheck,
-      transactionCategory,
-      amortize,
-    ],
+    [resolved, amortize, defaultAmortizeGL],
   );
 
   useEffect(() => {
@@ -124,17 +179,18 @@ export default function DynamicPostingComponent({
   if (isReadOnly) {
     return (
       <div className="p-3 rounded-xl border border-gray-100 bg-gray-50/50 text-sm text-left">
-        {saved.debitAccount || saved.creditAccount ? (
+        {saved.DebitField || saved.CreditField ? (
           <div className="space-y-1">
             <p className="text-gray-900">
-              <span className="font-semibold">Debit:</span> {saved.debitAccount}
-              {' '}
-              <span className="font-semibold ml-2">Credit:</span>{' '}
-              {saved.creditAccount}
+              <span className="font-semibold">Debit:</span> {saved.DebitField}
+              <span className="font-semibold ml-3">Credit:</span>{' '}
+              {saved.CreditField}
             </p>
             <p className="text-gray-500 text-xs">
-              {saved.narration} &middot; {Number(saved.amount || 0).toLocaleString()}
-              {saved.currency ? ` ${saved.currency}` : ''}
+              {saved.NarrationField}
+              {saved.NarrationField ? ' · ' : ''}
+              {Number(saved.AmountField || 0).toLocaleString()}
+              {saved.Currency ? ` ${saved.Currency}` : ''}
               {saved.amortize ? ' · Amortized' : ''}
             </p>
           </div>
@@ -145,62 +201,42 @@ export default function DynamicPostingComponent({
     );
   }
 
-  const amortizeGLMissing = amortize && !String(defaultAmortizeGL || '').trim();
+  const amortizeGLMissing =
+    amortize && !String(defaultAmortizeGL || '').trim();
+  const missing = Object.keys(FORM_LABEL_BINDINGS).filter((key) => {
+    if (key === 'appendBranchCode') return false; // defaults to false
+    if (key === 'plCode' && amortize) return false; // replaced by the GL
+    const value = resolved[key];
+    return value === undefined || String(value ?? '').trim() === '';
+  });
 
   return (
     <div className="w-full space-y-3 text-left">
-      <div className="form-group">
-        <label className="control-label text-13" htmlFor={`${fieldName}_narration`}>
-          Narration Type
-        </label>
-        <select
-          id={`${fieldName}_narration`}
-          className="form-control"
-          value={narration}
-          onChange={(e) => setNarration(e.target.value)}
-        >
-          <option value="">Select narration type</option>
-          {narrationOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="form-group">
-        <label className="control-label text-13" htmlFor={`${fieldName}_entry_type`}>
-          Entry Type
-        </label>
-        <select
-          id={`${fieldName}_entry_type`}
-          className="form-control"
-          value={entryType}
-          onChange={(e) => setEntryType(e.target.value)}
-        >
-          <option value="">Select entry type</option>
-          <option value="credit">Credit</option>
-          <option value="debit">Debit</option>
-        </select>
-      </div>
-
-      <div className="form-group">
-        <label className="control-label text-13" htmlFor={`${fieldName}_amount`}>
-          Amount
-        </label>
-        <input
-          id={`${fieldName}_amount`}
-          type="text"
-          inputMode="decimal"
-          className="form-control"
-          value={amount}
-          placeholder="0.00"
-          onChange={(e) => {
-            const next = e.target.value;
-            // digits, commas and a single decimal point only
-            if (/^[\d,]*\.?\d*$/.test(next)) setAmount(next);
-          }}
-        />
+      <div className="rounded-xl border border-gray-100 bg-gray-50/40 divide-y divide-gray-100">
+        {Object.keys(FORM_LABEL_BINDINGS).map((key) => {
+          const raw =
+            key === 'plCode' && amortize
+              ? defaultAmortizeGL
+              : resolved[key];
+          const display =
+            key === 'appendBranchCode'
+              ? String(toBool(raw))
+              : String(raw ?? '').trim();
+          return (
+            <div
+              key={key}
+              className="flex items-center justify-between px-3 py-1.5 text-xs"
+            >
+              <span className="text-gray-500">
+                {DISPLAY_LABELS[key]}
+                {key === 'plCode' && amortize ? ' (Amortize GL)' : ''}
+              </span>
+              <span className="font-medium text-gray-900">
+                {display || '—'}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       <div className="custom-control custom-checkbox">
@@ -229,21 +265,26 @@ export default function DynamicPostingComponent({
         </div>
       )}
 
-      {payload && (
+      {payload ? (
         <div className="p-3 rounded-xl border border-green-200 bg-green-50/30 text-xs text-gray-700">
-          <span className="font-semibold">Debit:</span> {payload.debitAccount}
+          <span className="font-semibold">Debit:</span> {payload.DebitField}
           <span className="font-semibold ml-3">Credit:</span>{' '}
-          {payload.creditAccount}
+          {payload.CreditField}
           <span className="ml-3">
-            {payload.amount.toLocaleString()}
-            {payload.currency ? ` ${payload.currency}` : ''}
+            {payload.AmountField.toLocaleString()}
+            {payload.Currency ? ` ${payload.Currency}` : ''}
           </span>
         </div>
-      )}
-      {!payload && !amortizeGLMissing && !customerAccount && !otherAccount && (
-        <p className="text-xs text-gray-500">
-          Waiting for account values from the parent form.
-        </p>
+      ) : (
+        !amortizeGLMissing && (
+          <p className="text-xs text-gray-500">
+            Waiting for form values
+            {missing.length
+              ? `: ${missing.map((key) => DISPLAY_LABELS[key]).join(', ')}`
+              : ''}
+            .
+          </p>
+        )
       )}
     </div>
   );

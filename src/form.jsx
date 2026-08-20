@@ -424,6 +424,7 @@ class ReactForm extends React.Component {
             read_only={ro}
             defaultValue={this._getDefaultValue(item)}
             resultData={liveAnswers}
+            formData={this.props.data}
             apiBaseUrl={
               this.props.apiBaseUrl || "https://api.dev.gateway.kusala.com.ng"
             }

@@ -1249,6 +1249,7 @@ class DynamicPosting extends React.Component {
       style,
       read_only,
       resultData,
+      formData,
       handleChange,
       defaultValue,
     } = this.props;
@@ -1258,14 +1259,7 @@ class DynamicPosting extends React.Component {
       isReadOnly: itemReadOnly,
       field_name,
       pageBreakBefore,
-      customerAccountField,
-      otherAccountField,
       defaultAmortizeGL,
-      branchCode,
-      currency,
-      appendBranchCodeCheck,
-      transactionCategory,
-      narrationTypes,
     } = data;
 
     const isDisabled = !!((read_only || itemReadOnly) && !allowEdit);
@@ -1282,15 +1276,9 @@ class DynamicPosting extends React.Component {
             fieldName={field_name}
             defaultValue={defaultValue}
             resultData={resultData || {}}
+            formData={formData || []}
             isReadOnly={isDisabled}
-            customerAccountField={customerAccountField}
-            otherAccountField={otherAccountField}
             defaultAmortizeGL={defaultAmortizeGL}
-            branchCode={branchCode}
-            currency={currency}
-            appendBranchCodeCheck={appendBranchCodeCheck}
-            transactionCategory={transactionCategory}
-            narrationTypes={narrationTypes}
             onChange={(payload) => {
               this.setState({ dataList: payload }, () => {
                 handleChange?.(payload);
