@@ -298,7 +298,7 @@ const elementId = elementData?.id;
   render() {
     let classes = this.props.className;
     if (this.props.editMode) { classes += ' is-editing'; }
-    const data = this.state.data.filter(x => !!x && !x.parentId);
+    const data = this.state.data.filter(x => !!x && !x.parentId && !x.postingKey);
     const items = data.map((item, index) => this.getElement(item, index));
     return (
       <div className={classes}>

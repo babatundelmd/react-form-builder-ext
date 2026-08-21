@@ -47,8 +47,8 @@ export const isPostingChild = (item) => !!item?.postingKey;
 
 const buildChild = (parent, key, id) => ({
   id,
-  parentId: parent.id,
   postingKey: key,
+  postingParentId: parent.id,
   postingParentField: parent.field_name,
   element: 'TextInput',
   text: 'Text Input',
@@ -81,16 +81,26 @@ export function syncPostingFields(data) {
   const slotOf = (parentId, key) => `${parentId}::${key}`;
 
   existing.forEach((child) => {
-    const parent = parentById.get(child.parentId);
+    const parent = parentById.get(child.postingParentId);
     if (!parent) return; // parent removed -> drop the orphan
     if (!POSTING_FIELD_KEYS.includes(child.postingKey)) return;
-    const slot = slotOf(child.parentId, child.postingKey);
+    const slot = slotOf(child.postingParentId, child.postingKey);
     if (kept.has(slot)) return; // de-dupe
     // Refresh the derived bits in case the parent was renamed, but keep the
     // existing object when nothing changed so identity checks stay cheap.
+    // Children written by 3.0.4/3.0.5 carry container linkage (parentId) and
+    // a readOnly flag; both are stripped here so older forms heal on load.
     const fresh = buildChild(parent, child.postingKey, child.id);
-    const changed = Object.keys(fresh).some((k) => child[k] !== fresh[k]);
-    kept.set(slot, changed ? { ...child, ...fresh } : child);
+    const { parentId, col, parentIndex, readOnly, hideField, ...rest } = child;
+    const stale =
+      parentId !== undefined ||
+      col !== undefined ||
+      parentIndex !== undefined ||
+      readOnly !== undefined ||
+      hideField !== undefined;
+    const changed =
+      stale || Object.keys(fresh).some((k) => child[k] !== fresh[k]);
+    kept.set(slot, changed ? { ...rest, ...fresh } : child);
   });
 
   parents.forEach((parent) => {

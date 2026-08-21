@@ -554,7 +554,7 @@ class ReactForm extends React.Component {
       : this.props.data || [];
     const liveAnswers = this._answersWithVariables();
     const items = displayItems
-      .filter((x) => x && !x.parentId)
+      .filter((x) => x && !x.parentId && !x.postingKey)
       .map((item, indd) => {
         switch (item.element) {
           case "TextInput":
