@@ -7,6 +7,8 @@
  * workflow reads — so each value gets its own mappable row there.
  */
 
+import ID from '../UUID';
+
 /** Payload keys, in the order they appear in the SmartAdapter mapping list. */
 export const POSTING_FIELD_KEYS = [
   'CreditField',
@@ -43,8 +45,8 @@ const stripHtml = (value) =>
 
 export const isPostingChild = (item) => !!item?.postingKey;
 
-const buildChild = (parent, key) => ({
-  id: `${parent.id}__${key}`,
+const buildChild = (parent, key, id) => ({
+  id,
   parentId: parent.id,
   postingKey: key,
   postingParentField: parent.field_name,
@@ -55,8 +57,6 @@ const buildChild = (parent, key) => ({
   custom_name: `${parent.field_name}_${key}`,
   canHaveAnswer: true,
   required: false,
-  readOnly: true,
-  hideField: true,
   static: false,
 });
 
@@ -75,24 +75,28 @@ export function syncPostingFields(data) {
   if (!parents.length && !existing.length) return data;
 
   const parentById = new Map(parents.map((p) => [p.id, p]));
+  // Keyed by parent + posting key, not by id, so an existing child keeps its
+  // generated id across syncs.
   const kept = new Map();
+  const slotOf = (parentId, key) => `${parentId}::${key}`;
 
   existing.forEach((child) => {
     const parent = parentById.get(child.parentId);
     if (!parent) return; // parent removed -> drop the orphan
     if (!POSTING_FIELD_KEYS.includes(child.postingKey)) return;
-    if (kept.has(child.id)) return; // de-dupe
+    const slot = slotOf(child.parentId, child.postingKey);
+    if (kept.has(slot)) return; // de-dupe
     // Refresh the derived bits in case the parent was renamed, but keep the
     // existing object when nothing changed so identity checks stay cheap.
-    const fresh = buildChild(parent, child.postingKey);
+    const fresh = buildChild(parent, child.postingKey, child.id);
     const changed = Object.keys(fresh).some((k) => child[k] !== fresh[k]);
-    kept.set(child.id, changed ? { ...child, ...fresh } : child);
+    kept.set(slot, changed ? { ...child, ...fresh } : child);
   });
 
   parents.forEach((parent) => {
     POSTING_FIELD_KEYS.forEach((key) => {
-      const child = buildChild(parent, key);
-      if (!kept.has(child.id)) kept.set(child.id, child);
+      const slot = slotOf(parent.id, key);
+      if (!kept.has(slot)) kept.set(slot, buildChild(parent, key, ID.uuid()));
     });
   });
 

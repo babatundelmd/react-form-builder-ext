@@ -64,7 +64,7 @@ export default class FormElementsEdit extends React.Component {
       fileLoading: false,
       documents: [],
       multiFieldOptions: this.props.formData.filter(
-        (i) => i.id !== this.props.element.id,
+        (i) => i.id !== this.props.element.id && !i.postingKey,
       ),
     };
     this.getDocuments = this.getDocuments.bind(this);
