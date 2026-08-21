@@ -19,6 +19,7 @@ const {
   DynamicMultiInput,
   DataGridInput,
   CustomSelect,
+  ApproverSelect,
   CustomDatePicker,
   TableInput,
   CascadeSelect,
@@ -63,6 +64,7 @@ FormElements.CascadeSelect = SortableElement(CascadeSelect);
 FormElements.DynamicMultiInput = SortableElement(DynamicMultiInput);
 FormElements.DataGridInput = SortableElement(DataGridInput);
 FormElements.CustomSelect = SortableElement(CustomSelect);
+FormElements.ApproverSelect = SortableElement(ApproverSelect);
 FormElements.CustomDatePicker = SortableElement(CustomDatePicker);
 FormElements.TableInput = SortableElement(TableInput);
 FormElements.PasswordInput = SortableElement(PasswordInput);

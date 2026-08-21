@@ -131,6 +131,7 @@ class ReactForm extends React.Component {
       case "ArithmeticInput":
       case "DynamicPosting":
       case "CustomSelect":
+      case "ApproverSelect":
         $.value = ref?.state?.dataList ?? "";
         return $;
       case "FileUpload":
@@ -567,6 +568,7 @@ class ReactForm extends React.Component {
           case "DynamicMultiInput":
           case "DataGridInput":
           case "CustomSelect":
+          case "ApproverSelect":
           case "CustomDatepicker":
           case "TableInput":
           case "EmailInput":

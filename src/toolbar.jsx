@@ -215,6 +215,17 @@ class Toolbar extends React.Component {
       },
 
       {
+        key: 'ApproverSelect',
+        name: 'Select Approver',
+        label: 'Select Approver',
+        field_name: 'approver_select_',
+        icon: 'fas fa-user-check',
+        canHaveAnswer: true,
+        canReadOnly: true,
+        canToggleField: true,
+      },
+
+      {
         key: 'DatePicker',
         name: 'DatePicker',
         label: 'Date Label',
