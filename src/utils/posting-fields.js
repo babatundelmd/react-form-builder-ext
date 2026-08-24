@@ -44,6 +44,11 @@ const stripHtml = (value) =>
     .trim();
 
 export const isPostingChild = (item) => !!item?.postingKey;
+const childLabel = (parent, key) => {
+  const own = stripHtml(parent.label);
+  const named = own && own.toLowerCase() !== 'dynamic posting' ? `${own} - ` : '';
+  return `dynamic_posting - ${named}${POSTING_FIELD_LABELS[key]}`;
+};
 
 const buildChild = (parent, key, id) => ({
   id,
@@ -52,7 +57,7 @@ const buildChild = (parent, key, id) => ({
   postingParentField: parent.field_name,
   element: 'TextInput',
   text: 'Text Input',
-  label: `${stripHtml(parent.label) || 'Dynamic Posting'} - ${POSTING_FIELD_LABELS[key]}`,
+  label: childLabel(parent, key),
   field_name: `${parent.field_name}_${key}`,
   custom_name: `${parent.field_name}_${key}`,
   canHaveAnswer: true,
@@ -101,10 +106,6 @@ export function syncPostingFields(data) {
     if (!POSTING_FIELD_KEYS.includes(ident.key)) return;
     const slot = slotOf(ident.parentId, ident.key);
     if (kept.has(slot)) return; // de-dupe
-    // Refresh the derived bits in case the parent was renamed, but keep the
-    // existing object when nothing changed so identity checks stay cheap.
-    // Children written by 3.0.4/3.0.5 carry container linkage (parentId) and
-    // a readOnly flag; both are stripped here so older forms heal on load.
     const fresh = buildChild(parent, ident.key, item.id || ID.uuid());
     const { parentId, col, parentIndex, readOnly, hideField, ...rest } = item;
     const stale =

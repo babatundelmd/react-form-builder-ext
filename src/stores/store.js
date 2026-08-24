@@ -13,7 +13,7 @@ const store = new Store({
       // the workflow can map them individually.
       const normalized = syncPostingFields(data);
       context.commit('setData', normalized);
-      if (saveData) this.save(normalized);
+      if (saveData || normalized !== data) this.save(normalized);
     },
 
     load(context, { loadUrl, saveUrl, data, saveAlways }) {
