@@ -1307,25 +1307,39 @@ class DynamicPosting extends React.Component {
       ? "SortableItem rfb-item alwaysbreak"
       : "SortableItem rfb-item";
 
+    const view = (
+      <DynamicPostingComponent
+        fieldName={field_name}
+        defaultValue={defaultValue}
+        resultData={resultData || {}}
+        formData={formData || []}
+        isReadOnly={isDisabled}
+        isDesignMode={!this.props.mutable}
+        defaultAmortizeGL={defaultAmortizeGL}
+        onChange={(payload) => {
+          this.setState({ dataList: payload }, () => {
+            handleChange?.(payload);
+          });
+        }}
+      />
+    );
+
+    // Outside the builder this element has no UI at all -- it is kept mounted
+    // (hidden) purely so it can resolve and report the posting payload.
+    if (this.props.mutable) {
+      return (
+        <div style={{ display: "none" }} aria-hidden="true">
+          {view}
+        </div>
+      );
+    }
+
     return (
       <div style={style} className={baseClasses}>
         <ComponentHeader {...this.props} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
-          <DynamicPostingComponent
-            fieldName={field_name}
-            defaultValue={defaultValue}
-            resultData={resultData || {}}
-            formData={formData || []}
-            isReadOnly={isDisabled}
-            isDesignMode={!this.props.mutable}
-            defaultAmortizeGL={defaultAmortizeGL}
-            onChange={(payload) => {
-              this.setState({ dataList: payload }, () => {
-                handleChange?.(payload);
-              });
-            }}
-          />
+          {view}
         </div>
       </div>
     );

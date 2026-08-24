@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { POSTING_FIELD_KEYS } from '../utils/posting-fields';
 
@@ -18,6 +18,7 @@ export const FORM_LABEL_BINDINGS = {
   amount: ['amount'],
   currency: ['currency type', 'currency'],
   entryType: ['entry type'],
+  amortizePayment: ['amortize payment', 'amortize'],
 };
 
 const DISPLAY_LABELS = {
@@ -30,6 +31,7 @@ const DISPLAY_LABELS = {
   amount: 'Amount',
   currency: 'Currency Type',
   entryType: 'Entry Type',
+  amortizePayment: 'Amortize Payment',
 };
 
 const normalizeLabel = (label) =>
@@ -164,14 +166,15 @@ export default function DynamicPostingComponent({
   const saved =
     defaultValue && typeof defaultValue === 'object' ? defaultValue : {};
 
-  const [amortize, setAmortize] = useState(!!saved.amortize);
-
   const resolved = useMemo(
     () => resolveFormValues(formData, resultData),
     [formData, resultData],
   );
 
   const bindings = useMemo(() => resolveFormBindings(formData), [formData]);
+
+  // Amortize is answered on the form ("Amortize Payment", true/false).
+  const amortize = toBool(resolved.amortizePayment);
 
   const payload = useMemo(
     () =>
@@ -187,6 +190,12 @@ export default function DynamicPostingComponent({
     if (isReadOnly || typeof onChange !== 'function') return;
     onChange(payload);
   }, [payload, isReadOnly]);
+
+  if (!isDesignMode) {
+    // Invisible to the end user; the component still runs so the payload is
+    // resolved and collected with the rest of the form.
+    return null;
+  }
 
   if (isReadOnly) {
     return (
@@ -256,22 +265,6 @@ export default function DynamicPostingComponent({
             </div>
           );
         })}
-      </div>
-
-      <div className="custom-control custom-checkbox">
-        <input
-          id={`${fieldName}_amortize`}
-          className="custom-control-input"
-          type="checkbox"
-          checked={amortize}
-          onChange={(e) => setAmortize(e.target.checked)}
-        />
-        <label
-          className="custom-control-label"
-          htmlFor={`${fieldName}_amortize`}
-        >
-          Amortize
-        </label>
       </div>
 
       {amortizeGLMissing && (

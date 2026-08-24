@@ -60,38 +60,53 @@ const buildChild = (parent, key, id) => ({
   static: false,
 });
 
-/**
- * Returns `data` with exactly one child entry per posting key for every
- * Dynamic Posting element, and no orphaned posting children. Deterministic
- * ids make this idempotent, so it is safe to run on every store update.
- */
 export function syncPostingFields(data) {
   if (!Array.isArray(data)) return data;
 
   const parents = data.filter((x) => x?.element === 'DynamicPosting' && x?.id);
-  const existing = data.filter(isPostingChild);
+  const hadChildren = data.some(isPostingChild);
 
   // Nothing to do and nothing to clean up.
-  if (!parents.length && !existing.length) return data;
+  if (!parents.length && !hadChildren) return data;
 
   const parentById = new Map(parents.map((p) => [p.id, p]));
+  const slotOf = (parentId, key) => `${parentId}::${key}`;
+
+  const byFieldName = new Map();
+  parents.forEach((parent) => {
+    POSTING_FIELD_KEYS.forEach((key) => {
+      byFieldName.set(`${parent.field_name}_${key}`, {
+        parentId: parent.id,
+        key,
+      });
+    });
+  });
+  const identify = (item) => {
+    if (!item) return null;
+    if (item.postingKey) {
+      return { parentId: item.postingParentId, key: item.postingKey };
+    }
+    return item.field_name ? byFieldName.get(item.field_name) || null : null;
+  };
+
   // Keyed by parent + posting key, not by id, so an existing child keeps its
   // generated id across syncs.
   const kept = new Map();
-  const slotOf = (parentId, key) => `${parentId}::${key}`;
 
-  existing.forEach((child) => {
-    const parent = parentById.get(child.postingParentId);
+  data.forEach((item) => {
+    const ident = identify(item);
+    if (!ident) return;
+    const parent = parentById.get(ident.parentId);
     if (!parent) return; // parent removed -> drop the orphan
-    if (!POSTING_FIELD_KEYS.includes(child.postingKey)) return;
-    const slot = slotOf(child.postingParentId, child.postingKey);
+    if (!POSTING_FIELD_KEYS.includes(ident.key)) return;
+    const slot = slotOf(ident.parentId, ident.key);
     if (kept.has(slot)) return; // de-dupe
     // Refresh the derived bits in case the parent was renamed, but keep the
     // existing object when nothing changed so identity checks stay cheap.
     // Children written by 3.0.4/3.0.5 carry container linkage (parentId) and
     // a readOnly flag; both are stripped here so older forms heal on load.
-    const fresh = buildChild(parent, child.postingKey, child.id);
-    const { parentId, col, parentIndex, readOnly, hideField, ...rest } = child;
+    const fresh = buildChild(parent, ident.key, item.id || ID.uuid());
+    const { parentId, col, parentIndex, readOnly, hideField, ...rest } = item;
     const stale =
       parentId !== undefined ||
       col !== undefined ||
@@ -99,8 +114,8 @@ export function syncPostingFields(data) {
       readOnly !== undefined ||
       hideField !== undefined;
     const changed =
-      stale || Object.keys(fresh).some((k) => child[k] !== fresh[k]);
-    kept.set(slot, changed ? { ...rest, ...fresh } : child);
+      stale || Object.keys(fresh).some((k) => item[k] !== fresh[k]);
+    kept.set(slot, changed ? { ...rest, ...fresh } : item);
   });
 
   parents.forEach((parent) => {
@@ -110,8 +125,17 @@ export function syncPostingFields(data) {
     });
   });
 
-  const next = data.filter((x) => !isPostingChild(x));
-  kept.forEach((child) => next.push(child));
+  const next = [];
+  data.forEach((item) => {
+    if (identify(item)) return; // re-inserted under its own parent below
+    next.push(item);
+    if (item?.element === 'DynamicPosting' && item?.id) {
+      POSTING_FIELD_KEYS.forEach((key) => {
+        const child = kept.get(slotOf(item.id, key));
+        if (child) next.push(child);
+      });
+    }
+  });
 
   // Avoid pointless re-renders when nothing actually changed.
   const same =
