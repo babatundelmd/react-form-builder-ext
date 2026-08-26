@@ -24,7 +24,6 @@ import UniversalFileViewer from "../DocumentViewer";
 import DynamicInputList from "../DynamicInput";
 import DataGrid from "./DataGrid";
 import CustomSelectComponent from "./CustomSearchSelect";
-import ApproverSelectComponent from "./ApproverSelect";
 import CascadeDropdown from "./cascade-dropdown";
 import ArithmeticComponentView from "./ArithmeticComponentView";
 import DynamicPostingComponent from "./dynamic-posting";
@@ -1021,45 +1020,6 @@ class CustomSelect extends React.Component {
     );
   }
 }
-class ApproverSelect extends React.Component {
-  constructor(props) {
-    super(props);
-    this.inputField = React.createRef();
-    this.state = {
-      dataList: props.defaultValue || "",
-    };
-  }
-
-  isReadOnly = () => {
-    const { read_only, data } = this.props;
-    return (read_only || data?.isReadOnly) && !data?.allowEdit;
-  };
-
-  render() {
-    const {
-      data, defaultValue, style, mutable, apiBaseUrl,
-    } = this.props;
-    const baseClasses =
-      "SortableItem rfb-item" + (data.pageBreakBefore ? " alwaysbreak" : "");
-
-    return (
-      <div style={{ ...style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
-        <div className="form-group">
-          <ComponentLabel {...this.props} />
-          <ApproverSelectComponent
-            defaultValue={defaultValue}
-            readOnly={this.isReadOnly()}
-            apiBaseUrl={apiBaseUrl}
-            ref={mutable ? this.inputField : undefined}
-            onGetValue={(value) => this.setState({ dataList: value })}
-          />
-        </div>
-      </div>
-    );
-  }
-}
-
 class DynamicMultiInput extends React.Component {
   constructor(props) {
     super(props);
@@ -1323,16 +1283,6 @@ class DynamicPosting extends React.Component {
         }}
       />
     );
-
-    // Outside the builder this element has no UI at all -- it is kept mounted
-    // (hidden) purely so it can resolve and report the posting payload.
-    if (this.props.mutable) {
-      return (
-        <div style={{ display: "none" }} aria-hidden="true">
-          {view}
-        </div>
-      );
-    }
 
     return (
       <div style={style} className={baseClasses}>
@@ -3306,7 +3256,6 @@ FormElements.TableInput = TableInput;
 FormElements.CascadeSelect = CascadeSelect;
 FormElements.DynamicMultiInput = DynamicMultiInput;
 FormElements.CustomSelect = CustomSelect;
-FormElements.ApproverSelect = ApproverSelect;
 FormElements.DataGridInput = DataGridInput;
 FormElements.MultiFileUpload = MultiFileUpload;
 FormElements.AzureFileUpload = AzureFileUpload;

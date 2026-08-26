@@ -191,12 +191,6 @@ export default function DynamicPostingComponent({
     onChange(payload);
   }, [payload, isReadOnly]);
 
-  if (!isDesignMode) {
-    // Invisible to the end user; the component still runs so the payload is
-    // resolved and collected with the rest of the form.
-    return null;
-  }
-
   if (isReadOnly) {
     return (
       <div className="p-3 rounded-xl border border-gray-100 bg-gray-50/50 text-sm text-left">

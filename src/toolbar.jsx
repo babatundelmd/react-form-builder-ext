@@ -214,16 +214,6 @@ class Toolbar extends React.Component {
         canUseCascade: true,
       },
 
-      {
-        key: 'ApproverSelect',
-        name: 'Select Approver',
-        label: 'Select Approver',
-        field_name: 'approver_select_',
-        icon: 'fas fa-user-check',
-        canHaveAnswer: true,
-        canReadOnly: true,
-        canToggleField: true,
-      },
 
       {
         key: 'DatePicker',
