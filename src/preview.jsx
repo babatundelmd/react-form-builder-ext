@@ -271,7 +271,10 @@ const elementId = elementData?.id;
     }
     const SortableFormElement = SortableFormElements[item.element];
 
-    if (SortableFormElement === null) {
+    // Unknown element type (e.g. one saved by an older version and since
+    // removed): skip it rather than handing React `undefined` and crashing
+    // the whole builder.
+    if (!SortableFormElement) {
       return null;
     }
     return <SortableFormElement id={item.id} seq={this.seq} index={index} moveCard={this.moveCard} insertCard={this.insertCard} mutable={false} parent={this.props.parent} editModeOn={this.props.editModeOn} isDraggable={true} key={item.id} sortData={item.id} data={item} formData={this.state.data} getDataById={this.getDataById} setAsChild={this.setAsChild} removeChild={this.removeChild} _onDestroy={this._onDestroy} duplicateElement={this.duplicateElement} />;

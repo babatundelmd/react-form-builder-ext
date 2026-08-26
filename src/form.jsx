@@ -197,6 +197,9 @@ class ReactForm extends React.Component {
 
   _isInvalid(item) {
     if (!item?.required) return false;
+    // Element type no longer registered, so it never rendered: don't block
+    // submission on a required field the user has no way to fill.
+    if (!FormElements[item.element]) return false;
 
     const ref = this.inputs[item.field_name];
     if (!ref) return true;
@@ -413,6 +416,9 @@ class ReactForm extends React.Component {
     if (!item) return null;
     if (item.custom) return this.getCustomElement(item);
     const Input = FormElements[item.element];
+    // Element type no longer registered (saved by an older version): skip it
+    // instead of rendering `undefined`.
+    if (!Input) return null;
     const ro = this.props.read_only || item?.readOnly;
 
     // Pass live answers (with variable overlays) so dependent fields update
@@ -467,6 +473,7 @@ class ReactForm extends React.Component {
 
   getSimpleElement(item) {
     const Element = FormElements[item.element];
+    if (!Element) return null;
     return (
       <Element
         mutable
