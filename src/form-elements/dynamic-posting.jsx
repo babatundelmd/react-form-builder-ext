@@ -11,7 +11,7 @@ export { POSTING_FIELD_KEYS };
 export const FORM_LABEL_BINDINGS = {
   customerAccount: ['customer account', 'account number'],
   plCode: ['pl code'],
-  narration: ['narration'],
+  narration: ['narration', 'pay type'],
   transactionCategory: ['transaction category'],
   branchCode: ['branch code'],
   appendBranchCode: ['append branch code'],
@@ -51,6 +51,19 @@ const toBool = (value) => {
   return String(value ?? '').trim().toLowerCase() === 'true';
 };
 
+
+export const parsePosting = (value) => {
+  if (!value) return {};
+  if (typeof value === 'object') return value;
+  if (typeof value !== 'string') return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+};
+
 const normalizeEntryType = (value) => {
   const v = String(value ?? '').toLowerCase();
   if (v.includes('credit')) return 'credit';
@@ -58,11 +71,7 @@ const normalizeEntryType = (value) => {
   return '';
 };
 
-/**
- * Matches parent-form fields to posting inputs by label and reads their
- * current answers. formData is the form definition; resultData the live
- * answers keyed by field_name.
- */
+
 export function resolveFormValues(formData = [], resultData = {}) {
   const byLabel = {};
   (Array.isArray(formData) ? formData : []).forEach((item) => {
@@ -163,8 +172,9 @@ export default function DynamicPostingComponent({
   defaultAmortizeGL = '',
   isDesignMode = false,
 }) {
-  const saved =
-    defaultValue && typeof defaultValue === 'object' ? defaultValue : {};
+  // The stored answer round-trips through the API as a JSON *string*, so parse
+  // it back before reading any key off it.
+  const saved = useMemo(() => parsePosting(defaultValue), [defaultValue]);
 
   const resolved = useMemo(
     () => resolveFormValues(formData, resultData),
