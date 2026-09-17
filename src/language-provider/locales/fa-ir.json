@@ -93,5 +93,6 @@
   "message.was-answered-incorrectly": "به اشتباه پاسخ داده شد",
   "message.was-not-registered": "ثبت نشد",
   "message.invalid-email": "فیلد نیاز به آدرس ایمیل معتبر دارد",
-  "message.invalid-phone-number": "فیلد نیاز به شماره تلفن معتبر دارد"
+  "message.invalid-phone-number": "فیلد نیاز به شماره تلفن معتبر دارد",
+  "message.invalid-characters": "حاوی کاراکترهای ناامن است (< > { } ` \\)"
 }

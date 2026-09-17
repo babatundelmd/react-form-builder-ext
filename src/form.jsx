@@ -23,6 +23,11 @@ const EMAIL_RE =
 const validateEmail = (email) => EMAIL_RE.test(String(email || "").trim());
 const validatePhone = (phone) =>
   /^(\+)?([0-9]{1,4}[\s\-()]?){2,}$/.test(String(phone || "").trim());
+// Characters used to break out into HTML tags, script blocks, or template
+// expressions. Deliberately excludes quotes/&/();, which are valid in names,
+// addresses and free-text comments.
+const UNSAFE_CHARS_RE = /[<>{}`\\]/;
+const hasUnsafeChars = (value) => UNSAFE_CHARS_RE.test(String(value ?? ""));
 
 class ReactForm extends React.Component {
   form = null;
@@ -389,6 +394,18 @@ class ReactForm extends React.Component {
           errors.push(
             `${item.label} ${intl.formatMessage({
               id: "message.invalid-phone-number",
+            })}`
+          );
+        }
+      }
+
+      if (item.element === "TextInput" || item.element === "TextArea") {
+        const ref = this.inputs[item.field_name];
+        const textValue = this._getItemValue(item, ref).value;
+        if (hasUnsafeChars(textValue)) {
+          errors.push(
+            `${item.label} ${intl.formatMessage({
+              id: "message.invalid-characters",
             })}`
           );
         }

@@ -94,5 +94,6 @@
   "message.was-answered-incorrectly": "è stato risposto in modo errato",
   "message.was-not-registered": "non è stato registrato",
   "message.invalid-email": "il campo richiede un indirizzo email valido",
-  "message.invalid-phone-number": "campo richiede un numero di telefono valido"
+  "message.invalid-phone-number": "campo richiede un numero di telefono valido",
+  "message.invalid-characters": "contiene caratteri non sicuri (< > { } ` \\)"
 }
