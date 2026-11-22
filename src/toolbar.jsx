@@ -40,13 +40,22 @@ function buildItems(items, defaultItems) {
   });
 }
 
+// Toolbox entries are listed alphabetically by their display name.
+const byName = (a, b) =>
+  String(a?.name ?? '').localeCompare(String(b?.name ?? ''), undefined, {
+    sensitivity: 'base',
+    numeric: true,
+  });
+
 function buildGroupItems(allItems) {
-  const items = allItems.filter((x) => !x.group_name);
-  const gItems = allItems.filter((x) => !!x.group_name);
+  const sorted = [...allItems].sort(byName);
+  const items = sorted.filter((x) => !x.group_name);
+  const gItems = sorted.filter((x) => !!x.group_name);
   const grouped = groupBy(gItems, (x) => x.group_name);
   const groupKeys = gItems
     .map((x) => x.group_name)
-    .filter((v, i, self) => self.indexOf(v) === i);
+    .filter((v, i, self) => self.indexOf(v) === i)
+    .sort((a, b) => byName({ name: a }, { name: b }));
   return { items, grouped, groupKeys };
 }
 

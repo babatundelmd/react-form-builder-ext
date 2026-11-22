@@ -18,6 +18,13 @@ import ErrorMessage from "../error-message";
 import SuccessMessage from "../success-message";
 import { getExtensionFromMimeType } from "../utils/getExt";
 import { getAuthToken } from "../utils/auth";
+import {
+  countDigits,
+  getNumberRules,
+  sanitizeNumericOnly,
+  truncateDigits,
+  validateNumberValue,
+} from "../utils/number-rules";
 import ImageViewer from "../ImageViewer";
 import TableInputElement from "../TableInputElement";
 import UniversalFileViewer from "../DocumentViewer";
@@ -1529,44 +1536,85 @@ class NumberInput extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      value: props.defaultValue || "",
+      value:
+        props.defaultValue === undefined || props.defaultValue === null
+          ? ""
+          : String(props.defaultValue),
       error: "",
     };
     this.inputField = React.createRef();
   }
 
-  handleChange = (e) => {
-    const value = e.target.value;
-    const { minLength, maxLength, field_name } = this.props.data;
+  // Called by the form on submit: shows the error on the field and returns it.
+  validate = () => {
+    const error = validateNumberValue(this.state.value, this.props.data);
+    this.setState({ error });
+    return error;
+  };
 
+  handleChange = (e) => {
+    const raw = e.target.value;
+    const { data } = this.props;
+    const { numericOnly } = getNumberRules(data);
+
+    let value = raw;
     let error = "";
-    if (value !== "") {
-      const number = parseFloat(value);
-      if (minLength !== undefined && number < minLength) {
-        error = `Value must be at least ${minLength}.`;
-      } else if (maxLength !== undefined && number > maxLength) {
-        error = `Value must be no more than ${maxLength}.`;
+    if (numericOnly) {
+      value = sanitizeNumericOnly(raw);
+      if (value !== raw) {
+        error = "Only numbers are allowed. Letters and symbols were removed.";
       }
+    }
+
+    // Don't let the entry grow past Max Length (digits): extra digits,
+    // typed or pasted, are cut off.
+    const { maxLength } = getNumberRules(data);
+    if (maxLength !== null && countDigits(value) > maxLength) {
+      value = truncateDigits(value, maxLength);
+      error = `Must be no more than ${maxLength} digit${maxLength === 1 ? "" : "s"}.`;
+    }
+
+    // Once an error is on screen, re-check as the user types so it clears
+    // the moment the entry is fixed.
+    if (!error && this.state.error) {
+      error = validateNumberValue(value, data);
     }
 
     this.setState({ value, error });
   };
 
+  handleBlur = () => {
+    this.setState({
+      error: validateNumberValue(this.state.value, this.props.data),
+    });
+  };
+
   render() {
     const { value, error } = this.state;
-    const { data, mutable, defaultValue } = this.props;
+    const { data } = this.props;
+    const rules = getNumberRules(data);
+    const errorId = `${data.field_name}_error`;
 
     const props = {
-      type: "number",
-      className: "form-control",
+      className: `form-control${error ? " is-invalid" : ""}`,
       name: data.field_name,
-      max: data.maxLength,
-      min: data.minLength,
-      step: "0.01",
       onChange: this.handleChange,
+      onBlur: this.handleBlur,
       value: value,
       ref: this.inputField,
+      "aria-invalid": error ? true : undefined,
+      "aria-describedby": error ? errorId : undefined,
     };
+
+    if (rules.numericOnly) {
+      props.type = "text";
+      props.inputMode = "decimal";
+    } else {
+      // No native min/max: the browser would block submit with its own
+      // tooltip before our field message could show.
+      props.type = "number";
+      props.step = "any";
+    }
 
     if ((this.props.read_only || data?.isReadOnly) && !data?.allowEdit) {
       props.disabled = true;
@@ -1583,7 +1631,11 @@ class NumberInput extends React.Component {
         <div className="form-group">
           <ComponentLabel {...this.props} />
           <input {...props} />
-          {error && <small className="text-danger">{error}</small>}
+          {error && (
+            <small id={errorId} className="text-danger" role="alert">
+              {error}
+            </small>
+          )}
         </div>
       </div>
     );

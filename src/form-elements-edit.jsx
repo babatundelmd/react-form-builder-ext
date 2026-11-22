@@ -28,6 +28,7 @@ import OptionsExample from "./OptionsExample";
 import MultiSelectInput from "./MultiSelectInput";
 import DataGridOptions from "./data-grid-options";
 import MultiSelectValue from "./MultiSelectValue";
+import { getNumberRulesConfigWarnings } from "./utils/number-rules";
 import ArithmeticComponent from "./form-elements/ArithmeticComponent";
 import AzureFileSettings from "./form-elements/azure-file-settings";
 
@@ -110,6 +111,70 @@ export default class FormElementsEdit extends React.Component {
 
   toggleRequired() {
     // const this_element = this.state.element;
+  }
+
+  renderNumberRules() {
+    const element = this.state.element;
+    const numberField = (key, label, fallbackKey, opts = {}) => (
+      <div className="form-group">
+        <div className="form-group-range">
+          <label className="control-label text-13" htmlFor={`number_${key}`}>
+            {label}
+          </label>
+          <input
+            id={`number_${key}`}
+            type="number"
+            style={{ width: "100%" }}
+            className="!w-full form-control text-sm"
+            placeholder="No limit"
+            defaultValue={
+              element[key] ?? (fallbackKey ? element[fallbackKey] : undefined) ?? ""
+            }
+            onBlur={this.updateElement.bind(this)}
+            onChange={this.editElementProp.bind(this, key, "value")}
+            {...opts}
+          />
+        </div>
+      </div>
+    );
+    const warnings = getNumberRulesConfigWarnings(element);
+
+    return (
+      <div className="form-group number-rules">
+        <label className="control-label">Number rules</label>
+        <div className="custom-control custom-checkbox">
+          <input
+            id="number-numeric-only"
+            className="custom-control-input"
+            type="checkbox"
+            checked={!!element.numericOnly}
+            value={true}
+            onChange={this.editElementProp.bind(this, "numericOnly", "checked")}
+          />
+          <label
+            className="custom-control-label"
+            htmlFor="number-numeric-only"
+          >
+            Numbers only (reject letters and symbols)
+          </label>
+        </div>
+        <div className="grid grid-cols-2 date_range gap-x-3">
+          {numberField("minLength", "Min Length (digits)", null, {
+            min: 0,
+            step: 1,
+          })}
+          {numberField("maxLength", "Max Length (digits)", null, {
+            min: 0,
+            step: 1,
+          })}
+        </div>
+        {warnings.map((w) => (
+          <small key={w} className="text-danger d-block">
+            {w}
+          </small>
+        ))}
+      </div>
+    );
   }
 
   editElementProp(elemProperty, targProperty, e) {
@@ -923,8 +988,11 @@ export default class FormElementsEdit extends React.Component {
             </div>
           </div>
         )}
+        {this.props.element.element === "NumberInput" &&
+          this.renderNumberRules()}
         <div className="grid grid-cols-2 date_range gap-x-3">
-          {this.props.element.hasOwnProperty("canHaveMinLength") && (
+          {this.props.element.element !== "NumberInput" &&
+            this.props.element.hasOwnProperty("canHaveMinLength") && (
             <div className="form-group">
               <div className="form-group-range">
                 <label className="control-label text-13" htmlFor="minLength">
@@ -945,7 +1013,8 @@ export default class FormElementsEdit extends React.Component {
               </div>
             </div>
           )}
-          {this.props.element.hasOwnProperty("canHaveMaxLength") && (
+          {this.props.element.element !== "NumberInput" &&
+            this.props.element.hasOwnProperty("canHaveMaxLength") && (
             <div className="form-group">
               <div className="form-group-range">
                 <label className="control-label text-13" htmlFor="maxLength">

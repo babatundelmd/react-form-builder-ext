@@ -11,6 +11,7 @@ import Registry from "./stores/registry";
 import ToggleFieldsContainer from "./ToggleFieldsContainer";
 import "./styles/final.css";
 import { logAuditActivity } from "./utils/auditLogger";
+import { validateNumberValue } from "./utils/number-rules";
 
 
 const { Image, Checkboxes, Signature, Download, Camera, FileUpload } =
@@ -379,6 +380,17 @@ class ReactForm extends React.Component {
               id: "message.invalid-email",
             })}`
           );
+        }
+      }
+
+      if (item.element === "NumberInput" && FormElements[item.element]) {
+        const ref = this.inputs[item.field_name];
+        if (ref) {
+          const numberError =
+            typeof ref.validate === "function"
+              ? ref.validate()
+              : validateNumberValue(this._getItemValue(item, ref).value, item);
+          if (numberError) errors.push(`${item.label}: ${numberError}`);
         }
       }
 
