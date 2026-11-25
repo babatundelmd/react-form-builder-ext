@@ -1161,9 +1161,16 @@ class ArithmeticInput extends React.Component {
     };
   }
 
+  isDisabled() {
+    const { read_only, data = {} } = this.props;
+    return !!((read_only || data.isReadOnly) && !data.allowEdit);
+  }
+
   componentDidUpdate(prevProps) {
-    if (prevProps.defaultValue !== this.props.defaultValue) {
-      this.setState({ dataList: String(this.props.defaultValue ?? "") });
+    if (this.isDisabled()) {
+      if (prevProps.defaultValue !== this.props.defaultValue) {
+        this.setState({ dataList: String(this.props.defaultValue ?? "") });
+      }
     }
   }
 
@@ -1180,8 +1187,6 @@ class ArithmeticInput extends React.Component {
     } = this.props;
 
     const {
-      allowEdit,
-      isReadOnly: itemReadOnly,
       field_name,
       pageBreakBefore,
       calculationFields,
@@ -1191,7 +1196,7 @@ class ArithmeticInput extends React.Component {
       outputFormat,
     } = data;
 
-    const isDisabled = !!((read_only || itemReadOnly) && !allowEdit);
+    const isDisabled = this.isDisabled();
     const baseClasses = pageBreakBefore
       ? "SortableItem rfb-item alwaysbreak"
       : "SortableItem rfb-item";
